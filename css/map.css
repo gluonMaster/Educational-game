@@ -9,7 +9,7 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  min-height: 300px;
+  min-height: 0;
   background: radial-gradient(circle at 50% 38%, #2f6e96 0%, var(--color-ocean) 68%, #12374f 100%);
 }
 

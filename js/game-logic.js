@@ -31,6 +31,7 @@
 
   var runtime = {
     isSubmitting: false,
+    awaitingContinue: false,
     nextTaskTimeoutId: null
   };
 
@@ -489,7 +490,12 @@
       global.clearTimeout(runtime.nextTaskTimeoutId);
       runtime.nextTaskTimeoutId = null;
     }
+    runtime.awaitingContinue = false;
     stopTaskTimer();
+  }
+
+  function hasManualContinueControl() {
+    return Boolean(byId("btn-continue-task"));
   }
 
   function shouldUseHardTimer(level) {
@@ -875,6 +881,8 @@
       runtime.nextTaskTimeoutId = null;
     }
 
+    runtime.awaitingContinue = false;
+
     runtime.nextTaskTimeoutId = global.setTimeout(function delayedNextTask() {
       runtime.nextTaskTimeoutId = null;
       if (gameState.status === "playing") {
@@ -969,7 +977,7 @@
   function submitAnswerInternal(selectedIndex, options) {
     var opts = options && typeof options === "object" ? options : {};
 
-    if (gameState.status !== "playing" || !gameState.currentTask || runtime.isSubmitting) {
+    if (gameState.status !== "playing" || !gameState.currentTask || runtime.isSubmitting || runtime.awaitingContinue) {
       return Promise.resolve(false);
     }
 
@@ -1017,12 +1025,21 @@
 
       if (checkGameResultAndFinishIfNeeded()) {
         runtime.isSubmitting = false;
+        runtime.awaitingContinue = false;
         saveState();
         return isCorrect;
       }
 
       saveState();
-      scheduleNextTask(isCorrect ? NEXT_TASK_DELAY_CORRECT_MS : NEXT_TASK_DELAY_INCORRECT_MS);
+
+      if (isCorrect) {
+        scheduleNextTask(NEXT_TASK_DELAY_CORRECT_MS);
+      } else if (hasManualContinueControl()) {
+        runtime.awaitingContinue = true;
+      } else {
+        scheduleNextTask(NEXT_TASK_DELAY_INCORRECT_MS);
+      }
+
       runtime.isSubmitting = false;
       return isCorrect;
     }).catch(function onSubmitFailure(error) {
@@ -1031,7 +1048,15 @@
       }
 
       saveState();
-      scheduleNextTask(isCorrect ? NEXT_TASK_DELAY_CORRECT_MS : NEXT_TASK_DELAY_INCORRECT_MS);
+
+      if (isCorrect) {
+        scheduleNextTask(NEXT_TASK_DELAY_CORRECT_MS);
+      } else if (hasManualContinueControl()) {
+        runtime.awaitingContinue = true;
+      } else {
+        scheduleNextTask(NEXT_TASK_DELAY_INCORRECT_MS);
+      }
+
       runtime.isSubmitting = false;
       return isCorrect;
     });
@@ -1040,6 +1065,7 @@
   function startGame() {
     clearRuntimeTimers();
     runtime.isSubmitting = false;
+    runtime.awaitingContinue = false;
     stopConfettiIfRunning();
 
     if (!global.MapGenerator || typeof global.MapGenerator.generate !== "function") {
@@ -1086,6 +1112,8 @@
       runtime.nextTaskTimeoutId = null;
     }
 
+    runtime.awaitingContinue = false;
+
     hideFeedback();
     setAnswersDisabled(false);
 
@@ -1110,8 +1138,17 @@
     return submitAnswerInternal(selectedIndex, { timedOut: false });
   }
 
+  function continueAfterFeedback() {
+    if (gameState.status !== "playing" || runtime.isSubmitting || !runtime.awaitingContinue) {
+      return false;
+    }
+
+    runtime.awaitingContinue = false;
+    return Boolean(nextTask());
+  }
+
   function onTimeUp() {
-    if (gameState.status !== "playing" || runtime.isSubmitting) {
+    if (gameState.status !== "playing" || runtime.isSubmitting || runtime.awaitingContinue) {
       return;
     }
 
@@ -1123,6 +1160,7 @@
 
     clearRuntimeTimers();
     runtime.isSubmitting = false;
+    runtime.awaitingContinue = false;
 
     gameState.status = finalResult;
     gameState.currentTask = null;
@@ -1158,6 +1196,7 @@
   function toMainMenu() {
     clearRuntimeTimers();
     runtime.isSubmitting = false;
+    runtime.awaitingContinue = false;
     stopConfettiIfRunning();
 
     gameState = createInitialState();
@@ -1179,6 +1218,7 @@
 
     gameState = createInitialState();
     gameState.status = "playing";
+    runtime.awaitingContinue = false;
     stopConfettiIfRunning();
     gameState.settings = normalizeSettings(saved.settings || getSettingsSnapshot());
     gameState.regions = deepClone(saved.regions) || [];
@@ -1231,6 +1271,7 @@
     startGame: startGame,
     nextTask: nextTask,
     submitAnswer: submitAnswer,
+    continueAfterFeedback: continueAfterFeedback,
     onTimeUp: onTimeUp,
     endGame: endGame,
     newGame: newGame,

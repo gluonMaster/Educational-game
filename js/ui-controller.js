@@ -618,6 +618,76 @@
     global.GameLogic.submitAnswer(index);
   }
 
+  function getContinueButton() {
+    return byId("btn-continue-task");
+  }
+
+  function setFeedbackContinueLayout(enabled) {
+    var container = byId("feedback");
+    if (!container || !container.classList) {
+      return;
+    }
+    container.classList.toggle("feedback-with-continue", Boolean(enabled));
+  }
+
+  function continueAfterFeedbackFromUi() {
+    if (!global.GameLogic || typeof global.GameLogic.continueAfterFeedback !== "function") {
+      return;
+    }
+
+    global.GameLogic.continueAfterFeedback();
+  }
+
+  function bindContinueButton() {
+    var button = getContinueButton();
+    if (!button || !button.dataset) {
+      return;
+    }
+
+    if (button.dataset.uiContinueBound === "true") {
+      return;
+    }
+
+    button.addEventListener("click", function onContinueClick() {
+      if (button.disabled) {
+        return;
+      }
+
+      continueAfterFeedbackFromUi();
+    });
+
+    button.dataset.uiContinueBound = "true";
+  }
+
+  function hideContinueButton() {
+    var button = getContinueButton();
+    if (!button || !button.classList) {
+      return;
+    }
+
+    setFeedbackContinueLayout(false);
+    button.classList.add("hidden");
+    button.disabled = true;
+  }
+
+  function showContinueButton() {
+    var button = getContinueButton();
+    if (!button || !button.classList) {
+      return;
+    }
+
+    bindContinueButton();
+    setFeedbackContinueLayout(true);
+    button.classList.remove("hidden");
+    button.disabled = false;
+
+    global.requestAnimationFrame(function focusContinueButton() {
+      if (typeof button.focus === "function") {
+        button.focus();
+      }
+    });
+  }
+
   function bindAnswerButtons() {
     var buttons = getAnswerButtons();
     for (var i = 0; i < buttons.length; i += 1) {
@@ -678,6 +748,8 @@
         explanationEl.classList.remove("explanation");
       }
     }
+
+    hideContinueButton();
   }
 
   function getTaskState() {
@@ -790,6 +862,7 @@
     }
 
     bindAnswerButtons();
+    bindContinueButton();
     updateTaskMeta();
     hideFeedbackBlock();
   }
@@ -910,6 +983,9 @@
     setFeedbackContent(mode, safeTask);
     if (isCorrect) {
       triggerCorrectFlash();
+      hideContinueButton();
+    } else {
+      showContinueButton();
     }
 
     uiState.feedback = {
@@ -928,6 +1004,8 @@
   }
 
   function showResult(result, stats) {
+    hideContinueButton();
+
     var state = stats && typeof stats === "object" ? stats : {};
     var isWin = result === "won";
     var resultScreen = byId("screen-result");
