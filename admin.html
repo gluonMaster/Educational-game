@@ -1,0 +1,481 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Админ-панель Fraction Conquest</title>
+  <link rel="stylesheet" href="css/admin.css">
+</head>
+<body>
+  <div id="admin-notification" class="admin-notification" role="status" aria-live="polite"></div>
+
+  <main class="admin-page">
+    <section class="admin-card">
+      <header class="admin-header">
+        <h1>Настройки Fraction Conquest</h1>
+        <p>Изменения сохраняются в браузере и применяются к новой игре.</p>
+      </header>
+
+      <form id="admin-settings-form" novalidate>
+        <section class="form-section" id="section-level">
+          <h2>Уровень сложности</h2>
+          <fieldset class="choices-list">
+            <legend class="sr-only">Выберите уровень сложности</legend>
+
+            <label class="choice-row">
+              <input type="radio" name="level" value="1" id="level-1">
+              <span class="choice-content">
+                <strong>1 — Начальный</strong>
+                <small>Знаменатели 2–12, числители 1–12, без отрицательных. Мягкий таймер.</small>
+              </span>
+            </label>
+
+            <label class="choice-row">
+              <input type="radio" name="level" value="2" id="level-2">
+              <span class="choice-content">
+                <strong>2 — Базовый</strong>
+                <small>Знаменатели 2–20, числители 1–20, смешанные числа. Мягкий таймер.</small>
+              </span>
+            </label>
+
+            <label class="choice-row">
+              <input type="radio" name="level" value="3" id="level-3">
+              <span class="choice-content">
+                <strong>3 — Продвинутый</strong>
+                <small>Знаменатели 2–50, до 3 чисел в выражении, отрицательные дроби. Жёсткий таймер.</small>
+              </span>
+            </label>
+
+            <label class="choice-row">
+              <input type="radio" name="level" value="4" id="level-4">
+              <span class="choice-content">
+                <strong>4 — Эксперт</strong>
+                <small>Знаменатели 2–100, до 4 чисел, вложенные скобки. Жёсткий таймер (ускоренный).</small>
+              </span>
+            </label>
+          </fieldset>
+        </section>
+
+        <section class="form-section" id="section-topics">
+          <div class="section-head">
+            <h2>Темы задач</h2>
+            <div class="topic-actions">
+              <button id="btn-topics-all" type="button" class="btn btn-light">Выбрать все</button>
+              <button id="btn-topics-none" type="button" class="btn btn-light">Снять все</button>
+            </div>
+          </div>
+
+          <fieldset class="topics-grid" id="topics-fieldset">
+            <legend class="sr-only">Выберите темы задач</legend>
+
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="simplify" checked><span class="choice-content">Сокращение дробей</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="mixed" checked><span class="choice-content">Выделение целой части</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="common_denom" checked><span class="choice-content">Приведение к общему знаменателю</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="add" checked><span class="choice-content">Сложение дробей</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="subtract" checked><span class="choice-content">Вычитание дробей</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="multiply" checked><span class="choice-content">Умножение дробей</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="divide" checked><span class="choice-content">Деление дробей</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="combined" checked><span class="choice-content">Комбинированные примеры</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="to_decimal" checked><span class="choice-content">Дробь → десятичная</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="from_decimal" checked><span class="choice-content">Десятичная → дробь</span></label>
+            <label class="choice-row topic-item"><input type="checkbox" name="topics" value="mixed_decimal" checked><span class="choice-content">Комбинированные с десятичными</span></label>
+          </fieldset>
+
+          <p class="section-hint">Минимум одна тема должна быть выбрана.</p>
+        </section>
+
+        <section class="form-section" id="section-map">
+          <h2>Настройки карты</h2>
+
+          <div class="range-field">
+            <div class="range-head">
+              <label for="map-regions">Количество областей</label>
+              <strong id="map-regions-value">22</strong>
+            </div>
+            <input id="map-regions" name="mapRegions" type="range" min="15" max="35" value="22">
+          </div>
+
+          <div class="range-field">
+            <div class="range-head">
+              <label for="player-start-regions">Начальных областей игрока</label>
+              <strong id="player-start-regions-value">3</strong>
+            </div>
+            <input id="player-start-regions" name="playerStartRegions" type="range" min="2" max="5" value="3">
+          </div>
+        </section>
+
+        <section class="form-section" id="section-timer">
+          <h2>Настройки таймера</h2>
+          <p id="timer-level-note" class="timer-level-note">
+            Множитель применяется к стандартному времени на каждую задачу (актуально для уровней 3 и 4).
+          </p>
+
+          <fieldset class="timer-options" id="timer-options-fieldset">
+            <legend class="sr-only">Выберите множитель времени</legend>
+            <label class="choice-row timer-item">
+              <input type="radio" name="timerMultiplier" value="0.5">
+              <span class="choice-content"><strong>0.5x</strong><small>Меньше времени (для опытных)</small></span>
+            </label>
+            <label class="choice-row timer-item">
+              <input type="radio" name="timerMultiplier" value="1">
+              <span class="choice-content"><strong>1x</strong><small>Стандартное время (по умолчанию)</small></span>
+            </label>
+            <label class="choice-row timer-item">
+              <input type="radio" name="timerMultiplier" value="1.5">
+              <span class="choice-content"><strong>1.5x</strong><small>Больше времени</small></span>
+            </label>
+            <label class="choice-row timer-item">
+              <input type="radio" name="timerMultiplier" value="2">
+              <span class="choice-content"><strong>2x</strong><small>Максимум времени (для начинающих)</small></span>
+            </label>
+          </fieldset>
+        </section>
+
+        <section class="form-section" id="section-timings">
+          <h2>Таблица таймингов</h2>
+          <div id="timing-preview" class="timing-preview" aria-live="polite"></div>
+        </section>
+
+        <div class="form-actions">
+          <button id="btn-save-settings" class="btn btn-primary" type="submit">Сохранить настройки</button>
+          <button id="btn-reset-settings" class="btn btn-danger" type="button">Сбросить к значениям по умолчанию</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="js/settings.js"></script>
+  <script>
+    (function initAdminPage() {
+      "use strict";
+
+      var form = document.getElementById("admin-settings-form");
+      if (!form || !window.Settings) {
+        return;
+      }
+
+      var TOPIC_ORDER = [
+        "simplify",
+        "mixed",
+        "common_denom",
+        "add",
+        "subtract",
+        "multiply",
+        "divide",
+        "combined",
+        "to_decimal",
+        "from_decimal",
+        "mixed_decimal"
+      ];
+
+      var TOPIC_LABELS = {
+        simplify: "Сокращение",
+        mixed: "Выделение целой части",
+        common_denom: "Общий знаменатель",
+        add: "Сложение",
+        subtract: "Вычитание",
+        multiply: "Умножение",
+        divide: "Деление",
+        combined: "Комбинированные",
+        to_decimal: "Дробь → десятичная",
+        from_decimal: "Десятичная → дробь",
+        mixed_decimal: "Комбинированные с десятичными"
+      };
+
+      var mapRegionsInput = document.getElementById("map-regions");
+      var mapRegionsValue = document.getElementById("map-regions-value");
+      var playerStartInput = document.getElementById("player-start-regions");
+      var playerStartValue = document.getElementById("player-start-regions-value");
+      var topicsFieldset = document.getElementById("topics-fieldset");
+      var topicCheckboxes = Array.prototype.slice.call(topicsFieldset.querySelectorAll('input[name="topics"]'));
+      var timerNote = document.getElementById("timer-level-note");
+      var timerSection = document.getElementById("section-timer");
+      var timerOptions = document.getElementById("timer-options-fieldset");
+      var timingPreview = document.getElementById("timing-preview");
+      var selectAllButton = document.getElementById("btn-topics-all");
+      var clearAllButton = document.getElementById("btn-topics-none");
+      var resetButton = document.getElementById("btn-reset-settings");
+      var notification = document.getElementById("admin-notification");
+      var notificationTimer = null;
+
+      function getSelectedLevel() {
+        var selected = form.querySelector('input[name="level"]:checked');
+        return selected ? Number(selected.value) : 2;
+      }
+
+      function getSelectedMultiplier() {
+        var selected = form.querySelector('input[name="timerMultiplier"]:checked');
+        return selected ? Number(selected.value) : 1;
+      }
+
+      function getSelectedTopics() {
+        var topics = [];
+        for (var i = 0; i < topicCheckboxes.length; i += 1) {
+          if (topicCheckboxes[i].checked) {
+            topics.push(topicCheckboxes[i].value);
+          }
+        }
+        return topics;
+      }
+
+      function setRadioValue(name, value) {
+        var selector = 'input[name="' + name + '"][value="' + String(value) + '"]';
+        var target = form.querySelector(selector);
+        if (target) {
+          target.checked = true;
+        }
+      }
+
+      function updateRangeLabels() {
+        mapRegionsValue.textContent = mapRegionsInput.value;
+        playerStartValue.textContent = playerStartInput.value;
+      }
+
+      function topicLabel(code) {
+        if (TOPIC_LABELS[code]) {
+          return TOPIC_LABELS[code];
+        }
+
+        var topics = Array.isArray(window.Settings.TOPICS) ? window.Settings.TOPICS : [];
+        for (var i = 0; i < topics.length; i += 1) {
+          if (topics[i] && topics[i].code === code && typeof topics[i].ru === "string") {
+            return topics[i].ru;
+          }
+        }
+        return code;
+      }
+
+      function formatSeconds(value) {
+        var rounded = Math.round(value * 10) / 10;
+        if (Math.abs(rounded - Math.round(rounded)) < 0.001) {
+          return String(Math.round(rounded));
+        }
+        return String(rounded).replace(".", ",");
+      }
+
+      function updateTimerApplicability() {
+        var level = getSelectedLevel();
+        var hardMode = level >= 3;
+
+        timerSection.classList.toggle("is-soft-level", !hardMode);
+        timerSection.classList.toggle("is-hard-level", hardMode);
+
+        if (hardMode) {
+          timerNote.textContent = "Множитель применяется к стандартному времени на каждую задачу (актуально для уровней 3 и 4).";
+          timerOptions.removeAttribute("aria-disabled");
+        } else {
+          timerNote.textContent = "Текущий уровень использует мягкий таймер. Множитель сохранится, но начнёт влиять только на уровнях 3 и 4.";
+          timerOptions.setAttribute("aria-disabled", "true");
+        }
+      }
+
+      function renderTimingPreview() {
+        var level = getSelectedLevel();
+        var multiplier = getSelectedMultiplier();
+
+        timingPreview.innerHTML = "";
+
+        if (level <= 2) {
+          var softText = document.createElement("p");
+          softText.className = "soft-timer-note";
+          softText.textContent = "Таймер мягкий — время не ограничено.";
+          timingPreview.appendChild(softText);
+          return;
+        }
+
+        var title = document.createElement("p");
+        title.className = "timing-title";
+        title.textContent = "Время на задачу (уровень " + String(level) + ", множитель " + String(multiplier) + "x):";
+        timingPreview.appendChild(title);
+
+        var list = document.createElement("ul");
+        list.className = "timing-list";
+
+        var timings = window.Settings.TIMINGS || {};
+        for (var i = 0; i < TOPIC_ORDER.length; i += 1) {
+          var code = TOPIC_ORDER[i];
+          var baseByLevel = timings[code];
+          var base = Array.isArray(baseByLevel) ? Number(baseByLevel[level - 1]) : 90;
+          var finalValue = base * multiplier;
+
+          var item = document.createElement("li");
+          var label = document.createElement("span");
+          var value = document.createElement("strong");
+
+          label.textContent = "• " + topicLabel(code);
+          value.textContent = formatSeconds(finalValue) + " сек";
+
+          item.appendChild(label);
+          item.appendChild(value);
+          list.appendChild(item);
+        }
+
+        timingPreview.appendChild(list);
+      }
+
+      function showNotification(message, type) {
+        if (!notification) {
+          return;
+        }
+
+        if (notificationTimer) {
+          window.clearTimeout(notificationTimer);
+          notificationTimer = null;
+        }
+
+        notification.textContent = message;
+        notification.classList.remove("is-success", "is-error", "is-info");
+
+        var mode = String(type || "info");
+        if (mode === "success") {
+          notification.classList.add("is-success");
+        } else if (mode === "error") {
+          notification.classList.add("is-error");
+        } else {
+          notification.classList.add("is-info");
+        }
+
+        notification.classList.add("is-visible");
+
+        notificationTimer = window.setTimeout(function hideNotification() {
+          notification.classList.remove("is-visible");
+        }, 3000);
+      }
+
+      function ensureAtLeastOneTopic(changed) {
+        var selected = getSelectedTopics();
+        if (selected.length > 0) {
+          return true;
+        }
+
+        if (changed) {
+          changed.checked = true;
+        } else if (topicCheckboxes.length > 0) {
+          topicCheckboxes[0].checked = true;
+        }
+
+        showNotification("Нельзя снять последнюю тему. Выберите хотя бы одну.", "error");
+        return false;
+      }
+
+      function loadSettingsToForm() {
+        var s = window.Settings.load();
+        setRadioValue("level", s.level);
+        setRadioValue("timerMultiplier", s.timerMultiplier);
+
+        var selectedMap = {};
+        for (var i = 0; i < s.topics.length; i += 1) {
+          selectedMap[s.topics[i]] = true;
+        }
+
+        for (var j = 0; j < topicCheckboxes.length; j += 1) {
+          topicCheckboxes[j].checked = Boolean(selectedMap[topicCheckboxes[j].value]);
+        }
+
+        if (!ensureAtLeastOneTopic()) {
+          // ensured inside function
+        }
+
+        mapRegionsInput.value = String(s.mapRegions);
+        playerStartInput.value = String(s.playerStartRegions);
+
+        updateRangeLabels();
+        updateTimerApplicability();
+        renderTimingPreview();
+      }
+
+      function readFormToSettings() {
+        return {
+          level: getSelectedLevel(),
+          topics: getSelectedTopics(),
+          mapRegions: Number(mapRegionsInput.value),
+          playerStartRegions: Number(playerStartInput.value),
+          timerMultiplier: getSelectedMultiplier()
+        };
+      }
+
+      function saveSettings() {
+        var s = readFormToSettings();
+
+        if (s.topics.length === 0) {
+          showNotification("Выберите хотя бы одну тему!", "error");
+          return;
+        }
+
+        window.Settings.save(s);
+        loadSettingsToForm();
+        showNotification("Настройки сохранены!", "success");
+      }
+
+      function resetSettings() {
+        window.Settings.reset();
+        loadSettingsToForm();
+        showNotification("Настройки сброшены к значениям по умолчанию", "info");
+      }
+
+      form.addEventListener("submit", function onSubmit(event) {
+        event.preventDefault();
+        saveSettings();
+      });
+
+      resetButton.addEventListener("click", function onResetClick() {
+        resetSettings();
+      });
+
+      mapRegionsInput.addEventListener("input", updateRangeLabels);
+      playerStartInput.addEventListener("input", updateRangeLabels);
+
+      mapRegionsInput.addEventListener("change", function onMapRangeChange() {
+        updateRangeLabels();
+      });
+      playerStartInput.addEventListener("change", function onPlayerRangeChange() {
+        updateRangeLabels();
+      });
+
+      selectAllButton.addEventListener("click", function onSelectAll() {
+        for (var i = 0; i < topicCheckboxes.length; i += 1) {
+          topicCheckboxes[i].checked = true;
+        }
+      });
+
+      clearAllButton.addEventListener("click", function onClearAll() {
+        for (var i = 0; i < topicCheckboxes.length; i += 1) {
+          topicCheckboxes[i].checked = false;
+        }
+        ensureAtLeastOneTopic();
+      });
+
+      for (var i = 0; i < topicCheckboxes.length; i += 1) {
+        topicCheckboxes[i].addEventListener("change", function onTopicChange(event) {
+          if (!event.target.checked) {
+            ensureAtLeastOneTopic(event.target);
+          }
+        });
+      }
+
+      var levelInputs = form.querySelectorAll('input[name="level"]');
+      for (var li = 0; li < levelInputs.length; li += 1) {
+        levelInputs[li].addEventListener("change", function onLevelChange() {
+          updateTimerApplicability();
+          renderTimingPreview();
+        });
+      }
+
+      var multiplierInputs = form.querySelectorAll('input[name="timerMultiplier"]');
+      for (var mi = 0; mi < multiplierInputs.length; mi += 1) {
+        multiplierInputs[mi].addEventListener("change", function onMultiplierChange() {
+          renderTimingPreview();
+        });
+      }
+
+      document.addEventListener("DOMContentLoaded", function onReady() {
+        loadSettingsToForm();
+      });
+
+      if (document.readyState !== "loading") {
+        loadSettingsToForm();
+      }
+    })();
+  </script>
+</body>
+</html>

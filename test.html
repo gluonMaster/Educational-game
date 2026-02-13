@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Fraction Conquest — Тесты мат. движка</title>
+  <style>
+    :root {
+      --ok-bg: #e8f7ec;
+      --ok-border: #2ea043;
+      --fail-bg: #fdebec;
+      --fail-border: #d1242f;
+      --info-bg: #eef4ff;
+      --info-border: #1f6feb;
+      --text: #1c2735;
+      --muted: #617286;
+      --surface: #ffffff;
+      --border: #d3dce8;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: "Segoe UI", Tahoma, sans-serif;
+      color: var(--text);
+      background: linear-gradient(160deg, #edf4ff 0%, #f8fbff 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 20px;
+      box-shadow: 0 14px 40px rgba(28, 39, 53, 0.08);
+    }
+
+    h1 {
+      margin: 0 0 14px;
+      font-size: 32px;
+    }
+
+    .hint {
+      margin: 0 0 18px;
+      color: var(--muted);
+    }
+
+    #test-controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    button {
+      border: 1px solid #1f6feb;
+      background: #1f6feb;
+      color: #ffffff;
+      border-radius: 10px;
+      padding: 10px 14px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: transform 0.12s ease, filter 0.12s ease;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      filter: brightness(1.03);
+    }
+
+    button.secondary {
+      border-color: #2ea043;
+      background: #2ea043;
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: default;
+    }
+
+    .summary {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+      background: #f7faff;
+      margin-bottom: 12px;
+    }
+
+    .summary strong {
+      font-size: 18px;
+    }
+
+    .summary-line {
+      margin-top: 8px;
+      color: var(--muted);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      table-layout: fixed;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: hidden;
+      background: #fff;
+    }
+
+    thead th {
+      text-align: left;
+      font-size: 14px;
+      padding: 10px;
+      border-bottom: 1px solid var(--border);
+      background: #f3f8ff;
+    }
+
+    tbody td {
+      padding: 8px 10px;
+      border-top: 1px solid #edf1f7;
+      vertical-align: top;
+      word-break: break-word;
+      font-size: 14px;
+    }
+
+    tr.pass td {
+      background: var(--ok-bg);
+      border-left: 4px solid var(--ok-border);
+    }
+
+    tr.fail td {
+      background: var(--fail-bg);
+      border-left: 4px solid var(--fail-border);
+    }
+
+    tr.info td {
+      background: var(--info-bg);
+      border-left: 4px solid var(--info-border);
+    }
+
+    .status-pill {
+      display: inline-block;
+      min-width: 44px;
+      text-align: center;
+      border-radius: 999px;
+      padding: 2px 8px;
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .pill-pass {
+      color: #126a2f;
+      background: #d4f2dd;
+    }
+
+    .pill-fail {
+      color: #8e1221;
+      background: #ffd7db;
+    }
+
+    .pill-info {
+      color: #0b4dad;
+      background: #dce9ff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Тесты математического движка</h1>
+    <p class="hint">Страница выполняет автоматические проверки `MathEngine` без внешних библиотек.</p>
+
+    <div id="test-controls">
+      <button id="btn-run-all" onclick="runAllTests()">Запустить все тесты</button>
+      <button id="btn-run-stress" class="secondary" onclick="runStressTest()">Стресс-тест (1000 задач)</button>
+    </div>
+
+    <div id="test-results"></div>
+  </div>
+
+  <script src="js/settings.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/math-engine.js"></script>
+  <script>
+    (function initMathEngineTests(global) {
+      "use strict";
+
+      var topics = [
+        "simplify",
+        "mixed",
+        "common_denom",
+        "add",
+        "subtract",
+        "multiply",
+        "divide",
+        "combined",
+        "to_decimal",
+        "from_decimal",
+        "mixed_decimal"
+      ];
+      var levels = [1, 2, 3, 4];
+
+      var testsPassed = 0;
+      var testsFailed = 0;
+      var results = [];
+      var currentMode = "all";
+      var runStartedAt = 0;
+
+      function byId(id) {
+        return document.getElementById(id);
+      }
+
+      function nowMs() {
+        return Date.now();
+      }
+
+      function addResult(status, message) {
+        results.push({
+          status: status,
+          message: String(message || "")
+        });
+      }
+
+      function assert(condition, message) {
+        if (condition) {
+          testsPassed += 1;
+          addResult("pass", message);
+        } else {
+          testsFailed += 1;
+          addResult("fail", message);
+          if (global.console && typeof global.console.error === "function") {
+            global.console.error("FAIL:", message);
+          }
+        }
+      }
+
+      function assertEqual(actual, expected, message) {
+        assert(
+          actual === expected,
+          message + ": ожидалось " + String(expected) + ", получено " + String(actual)
+        );
+      }
+
+      function info(message) {
+        addResult("info", message);
+      }
+
+      function beginSection(title) {
+        info("=== " + title + " ===");
+      }
+
+      function resetResults(modeName) {
+        testsPassed = 0;
+        testsFailed = 0;
+        results = [];
+        currentMode = modeName;
+        runStartedAt = nowMs();
+      }
+
+      function setButtonsDisabled(disabled) {
+        var allBtn = byId("btn-run-all");
+        var stressBtn = byId("btn-run-stress");
+        if (allBtn) {
+          allBtn.disabled = Boolean(disabled);
+        }
+        if (stressBtn) {
+          stressBtn.disabled = Boolean(disabled);
+        }
+      }
+
+      function decimalPlacesFromNumber(value) {
+        var text = String(Number(value));
+        if (text.indexOf("e") !== -1 || text.indexOf("E") !== -1) {
+          text = Number(value).toFixed(6);
+        }
+        var dot = text.indexOf(".");
+        if (dot === -1) {
+          return 0;
+        }
+        return text.length - dot - 1;
+      }
+
+      function getDecimalPlacesForTask(task) {
+        if (!task || task.answerType !== "decimal") {
+          return 3;
+        }
+
+        if (
+          task.correctAnswer &&
+          typeof task.correctAnswer.display === "string" &&
+          task.correctAnswer.display.indexOf("(") !== -1
+        ) {
+          return 3;
+        }
+
+        var decimalValue = task.correctAnswer ? task.correctAnswer.decimal : null;
+        if (!Number.isFinite(decimalValue)) {
+          return 3;
+        }
+        return Math.max(1, Math.min(6, decimalPlacesFromNumber(decimalValue)));
+      }
+
+      function normalizeToFraction(value) {
+        if (value === null || value === undefined) {
+          return null;
+        }
+
+        try {
+          if (typeof value === "number") {
+            return MathEngine.simplifyFraction(value, 1);
+          }
+
+          if (typeof value !== "object") {
+            return null;
+          }
+
+          if (Object.prototype.hasOwnProperty.call(value, "decimal")) {
+            return MathEngine.decimalToFraction(value.decimal);
+          }
+
+          if (Object.prototype.hasOwnProperty.call(value, "whole")) {
+            return MathEngine.toImproper(value.whole, value.num, value.den);
+          }
+
+          if (
+            Object.prototype.hasOwnProperty.call(value, "num") &&
+            Object.prototype.hasOwnProperty.call(value, "den")
+          ) {
+            return MathEngine.simplifyFraction(value.num, value.den);
+          }
+        } catch (error) {
+          return null;
+        }
+
+        return null;
+      }
+
+      function detectOptionKind(task) {
+        if (!task || typeof task !== "object") {
+          return "fraction";
+        }
+
+        if (task.topic === "common_denom" || task.answerType === "common_denom") {
+          return "common_denom";
+        }
+        if (task.answerType === "decimal") {
+          return "decimal";
+        }
+        if (task.answerType === "mixed" || task.topic === "mixed") {
+          return "mixed";
+        }
+
+        return "fraction";
+      }
+
+      function getCommonDenValue(value) {
+        if (Number.isFinite(value)) {
+          return Math.abs(Math.trunc(value));
+        }
+        if (value && typeof value === "object" && Number.isFinite(value.commonDen)) {
+          return Math.abs(Math.trunc(value.commonDen));
+        }
+        return null;
+      }
+
+      function optionKey(option, task) {
+        var kind = detectOptionKind(task);
+
+        if (kind === "common_denom") {
+          var common = getCommonDenValue(option);
+          return common === null ? null : ("c:" + String(common));
+        }
+
+        if (kind === "decimal") {
+          var decimalValue = option && typeof option === "object" ? option.decimal : option;
+          if (!Number.isFinite(decimalValue)) {
+            return null;
+          }
+          var places = getDecimalPlacesForTask(task);
+          return "d:" + Number(decimalValue).toFixed(places);
+        }
+
+        var fraction = normalizeToFraction(option);
+        if (!fraction) {
+          return null;
+        }
+        return "f:" + String(fraction.num) + "/" + String(fraction.den);
+      }
+
+      function optionsEqual(left, right, task) {
+        var leftKey = optionKey(left, task);
+        var rightKey = optionKey(right, task);
+        return Boolean(leftKey && rightKey && leftKey === rightKey);
+      }
+
+      function isCorrectOptionPresent(task) {
+        if (!task || !Array.isArray(task.options)) {
+          return false;
+        }
+
+        for (var i = 0; i < task.options.length; i += 1) {
+          if (optionsEqual(task.options[i], task.correctAnswer, task)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function collectNumbers(value, out) {
+        var target = out || [];
+
+        if (typeof value === "number" && Number.isFinite(value)) {
+          target.push(value);
+          return target;
+        }
+
+        if (Array.isArray(value)) {
+          for (var i = 0; i < value.length; i += 1) {
+            collectNumbers(value[i], target);
+          }
+          return target;
+        }
+
+        if (value && typeof value === "object") {
+          var keys = Object.keys(value);
+          for (var j = 0; j < keys.length; j += 1) {
+            collectNumbers(value[keys[j]], target);
+          }
+        }
+
+        return target;
+      }
+
+      function testUtilities() {
+        beginSection("Утилиты");
+
+        assertEqual(MathEngine.gcd(12, 8), 4, "gcd(12, 8)");
+        assertEqual(MathEngine.gcd(7, 13), 1, "gcd(7, 13)");
+        assertEqual(MathEngine.gcd(0, 5), 5, "gcd(0, 5)");
+        assertEqual(MathEngine.gcd(100, 75), 25, "gcd(100, 75)");
+
+        assertEqual(MathEngine.lcm(4, 6), 12, "lcm(4, 6)");
+        assertEqual(MathEngine.lcm(3, 5), 15, "lcm(3, 5)");
+
+        var r = MathEngine.simplifyFraction(6, 8);
+        assertEqual(r.num, 3, "simplify 6/8 num");
+        assertEqual(r.den, 4, "simplify 6/8 den");
+
+        r = MathEngine.simplifyFraction(-6, 8);
+        assertEqual(r.num, -3, "simplify -6/8 num (знак в числителе)");
+        assertEqual(r.den, 4, "simplify -6/8 den");
+
+        r = MathEngine.simplifyFraction(6, -8);
+        assertEqual(r.num, -3, "simplify 6/-8 num (знак нормализован)");
+        assertEqual(r.den, 4, "simplify 6/-8 den");
+
+        r = MathEngine.toImproper(2, 3, 4);
+        assertEqual(r.num, 11, "toImproper(2, 3, 4) num");
+        assertEqual(r.den, 4, "toImproper(2, 3, 4) den");
+
+        r = MathEngine.toMixed(11, 4);
+        assertEqual(r.whole, 2, "toMixed(11, 4) whole");
+        assertEqual(r.num, 3, "toMixed(11, 4) num");
+        assertEqual(r.den, 4, "toMixed(11, 4) den");
+
+        assert(
+          MathEngine.fractionsEqual({ num: 1, den: 2 }, { num: 2, den: 4 }),
+          "1/2 == 2/4"
+        );
+        assert(
+          !MathEngine.fractionsEqual({ num: 1, den: 2 }, { num: 1, den: 3 }),
+          "1/2 != 1/3"
+        );
+
+        r = MathEngine.decimalToFraction(0.75);
+        assertEqual(r.num, 3, "decimalToFraction(0.75) num");
+        assertEqual(r.den, 4, "decimalToFraction(0.75) den");
+      }
+
+      function testTaskGeneration() {
+        beginSection("Генерация задач по темам и уровням");
+
+        for (var t = 0; t < topics.length; t += 1) {
+          var topic = topics[t];
+          for (var l = 0; l < levels.length; l += 1) {
+            var level = levels[l];
+
+            for (var i = 0; i < 10; i += 1) {
+              var prefix = topic + " L" + String(level) + " #" + String(i);
+
+              try {
+                var task = MathEngine.generateTask(topic, level);
+                assert(task !== null && typeof task === "object", prefix + ": задача сгенерирована");
+                if (!task || typeof task !== "object") {
+                  continue;
+                }
+
+                assert(task.topic === topic, prefix + ": topic совпадает");
+                assert(task.level === level, prefix + ": level совпадает");
+                assert(task.correctAnswer !== undefined, prefix + ": есть правильный ответ");
+                assert(Array.isArray(task.options), prefix + ": options массив");
+                assert(task.options && task.options.length === 6, prefix + ": 6 вариантов");
+                assert(
+                  Number.isInteger(task.correctIndex) && task.correctIndex >= 0 && task.correctIndex <= 5,
+                  prefix + ": correctIndex корректен"
+                );
+
+                if (Array.isArray(task.options) && task.options.length === 6) {
+                  var optionAtCorrect = task.options[task.correctIndex];
+                  assert(
+                    optionsEqual(optionAtCorrect, task.correctAnswer, task),
+                    prefix + ": вариант по correctIndex равен correctAnswer"
+                  );
+
+                  assert(
+                    isCorrectOptionPresent(task),
+                    prefix + ": правильный ответ присутствует среди вариантов"
+                  );
+
+                  for (var a = 0; a < 6; a += 1) {
+                    for (var b = a + 1; b < 6; b += 1) {
+                      assert(
+                        !optionsEqual(task.options[a], task.options[b], task),
+                        prefix + ": варианты " + String(a) + " и " + String(b) + " уникальны"
+                      );
+                    }
+                  }
+                }
+
+                assert(
+                  task.explanation && typeof task.explanation.ru === "string" && task.explanation.ru.length > 0,
+                  prefix + ": пояснение RU"
+                );
+                assert(
+                  task.explanation && typeof task.explanation.de === "string" && task.explanation.de.length > 0,
+                  prefix + ": пояснение DE"
+                );
+              } catch (error) {
+                assert(false, prefix + ": ИСКЛЮЧЕНИЕ: " + error.message);
+              }
+            }
+          }
+        }
+      }
+
+      function testInvariants() {
+        beginSection("Инварианты");
+
+        for (var i = 0; i < 20; i += 1) {
+          var simplifyTask = MathEngine.generateTask("simplify", 1);
+          var q = simplifyTask.question;
+          assert(
+            MathEngine.gcd(Math.abs(q.num), q.den) > 1,
+            "simplify: " + String(q.num) + "/" + String(q.den) + " должна быть сократимой"
+          );
+        }
+
+        for (var j = 0; j < 20; j += 1) {
+          var mixedTask = MathEngine.generateTask("mixed", 1);
+          assert(
+            mixedTask.question.num > mixedTask.question.den,
+            "mixed: " + String(mixedTask.question.num) + "/" + String(mixedTask.question.den) + " должна быть неправильной"
+          );
+        }
+
+        for (var level = 1; level <= 2; level += 1) {
+          for (var k = 0; k < 20; k += 1) {
+            var subtractTask = MathEngine.generateTask("subtract", level);
+            var normalized = normalizeToFraction(subtractTask.correctAnswer);
+            var value = normalized ? (normalized.num / normalized.den) : NaN;
+            assert(value >= 0, "subtract L" + String(level) + ": результат " + String(value) + " >= 0");
+          }
+        }
+
+        for (var m = 0; m < 50; m += 1) {
+          var addTask = MathEngine.generateTask("add", 2);
+          for (var idx = 0; idx < addTask.options.length; idx += 1) {
+            var opt = addTask.options[idx];
+            if (opt && typeof opt === "object" && opt.num !== undefined && opt.den !== undefined) {
+              var g = MathEngine.gcd(Math.abs(opt.num), Math.abs(opt.den));
+              assert(g === 1, "add L2: вариант " + String(idx) + " (" + String(opt.num) + "/" + String(opt.den) + ") несократим");
+            }
+          }
+        }
+
+        for (var n = 0; n < 50; n += 1) {
+          var combinedTask = MathEngine.generateTask("combined", 4);
+          var ans = combinedTask.correctAnswer;
+          if (ans && typeof ans === "object" && ans.num !== undefined && ans.den !== undefined) {
+            assert(Math.abs(ans.num) <= 999, "combined L4: числитель " + String(ans.num) + " <= 999");
+            assert(Math.abs(ans.den) <= 999, "combined L4: знаменатель " + String(ans.den) + " <= 999");
+          }
+
+          var allNumbers = collectNumbers(combinedTask, []);
+          for (var z = 0; z < allNumbers.length; z += 1) {
+            assert(Math.abs(allNumbers[z]) <= 999, "combined L4: число " + String(allNumbers[z]) + " по модулю <= 999");
+          }
+        }
+      }
+
+      function testDistractors() {
+        beginSection("Дистракторы и типичные ошибки");
+
+        var totalChecked = 0;
+        var foundTypical = 0;
+
+        for (var i = 0; i < 120; i += 1) {
+          var task = MathEngine.generateTask("add", 1);
+          var question = task.question || {};
+          var operands = Array.isArray(question.operands) ? question.operands : [];
+          if (operands.length !== 2) {
+            continue;
+          }
+
+          var left = normalizeToFraction(operands[0]);
+          var right = normalizeToFraction(operands[1]);
+          if (!left || !right) {
+            continue;
+          }
+
+          var wrong = MathEngine.simplifyFraction(left.num + right.num, left.den + right.den);
+          if (MathEngine.fractionsEqual(wrong, task.correctAnswer)) {
+            continue;
+          }
+
+          totalChecked += 1;
+          var hasWrong = false;
+          for (var optionIndex = 0; optionIndex < task.options.length; optionIndex += 1) {
+            if (optionsEqual(task.options[optionIndex], wrong, task)) {
+              hasWrong = true;
+              break;
+            }
+          }
+
+          if (hasWrong) {
+            foundTypical += 1;
+          }
+        }
+
+        info("Дистракторы add L1: проверено задач = " + String(totalChecked) + ", найдено типичных ошибок = " + String(foundTypical));
+        assert(totalChecked > 0, "distractors: найдены задачи для проверки типичных ошибок");
+        assert(foundTypical > 0, "distractors: хотя бы в части задач присутствует типичная ошибка");
+      }
+
+      function runStressLoop() {
+        beginSection("Стресс-тест 1000 задач");
+
+        var total = 0;
+        var errors = 0;
+        var started = nowMs();
+
+        for (var i = 0; i < 1000; i += 1) {
+          var topic = topics[Math.floor(Math.random() * topics.length)];
+          var level = Math.floor(Math.random() * 4) + 1;
+
+          try {
+            var task = MathEngine.generateTask(topic, level);
+            if (
+              !task ||
+              !Array.isArray(task.options) ||
+              task.options.length !== 6 ||
+              !Number.isInteger(task.correctIndex) ||
+              task.correctIndex < 0 ||
+              task.correctIndex > 5
+            ) {
+              errors += 1;
+            }
+            total += 1;
+          } catch (error) {
+            errors += 1;
+            total += 1;
+          }
+        }
+
+        var elapsed = nowMs() - started;
+        var avg = elapsed / Math.max(1, total);
+        info("Стресс-тест: " + String(total) + " задач за " + String(elapsed) + " ms, ошибок: " + String(errors) + ", среднее: " + avg.toFixed(2) + " ms/задача");
+        assert(errors === 0, "stress: ошибок генерации = 0");
+        assert(elapsed < 5000, "stress: 1000 задач < 5000ms (факт: " + String(elapsed) + "ms)");
+        assert(avg < 50, "stress: среднее время на задачу < 50ms (факт: " + avg.toFixed(2) + "ms)");
+      }
+
+      function statusWeight(status) {
+        if (status === "fail") {
+          return 0;
+        }
+        if (status === "info") {
+          return 1;
+        }
+        return 2;
+      }
+
+      function statusPill(status) {
+        if (status === "fail") {
+          return "<span class=\"status-pill pill-fail\">FAIL</span>";
+        }
+        if (status === "info") {
+          return "<span class=\"status-pill pill-info\">INFO</span>";
+        }
+        return "<span class=\"status-pill pill-pass\">PASS</span>";
+      }
+
+      function renderResults() {
+        var root = byId("test-results");
+        if (!root) {
+          return;
+        }
+
+        var totalTests = testsPassed + testsFailed;
+        var elapsed = nowMs() - runStartedAt;
+        var sorted = results.slice().sort(function byStatusThenMessage(a, b) {
+          var diff = statusWeight(a.status) - statusWeight(b.status);
+          if (diff !== 0) {
+            return diff;
+          }
+          return a.message.localeCompare(b.message);
+        });
+
+        var html = "";
+        html += "<div class=\"summary\">";
+        html += "<strong>Режим: " + (currentMode === "stress" ? "стресс-тест" : "все тесты") + "</strong>";
+        html += "<div class=\"summary-line\">Прошло: <strong>" + String(testsPassed) + "</strong> / Всего: <strong>" + String(totalTests) + "</strong>, Провалено: <strong>" + String(testsFailed) + "</strong></div>";
+        html += "<div class=\"summary-line\">Время выполнения: " + String(elapsed) + " ms</div>";
+        html += "</div>";
+
+        html += "<table>";
+        html += "<thead><tr><th style=\"width:100px\">Статус</th><th>Сообщение</th></tr></thead>";
+        html += "<tbody>";
+
+        for (var i = 0; i < sorted.length; i += 1) {
+          var item = sorted[i];
+          html += "<tr class=\"" + item.status + "\">";
+          html += "<td>" + statusPill(item.status) + "</td>";
+          html += "<td>" + item.message + "</td>";
+          html += "</tr>";
+        }
+
+        html += "</tbody></table>";
+        root.innerHTML = html;
+      }
+
+      function ensureMathEngineReady() {
+        if (!global.MathEngine) {
+          resetResults(currentMode);
+          assert(false, "MathEngine не найден. Проверьте подключение js/math-engine.js");
+          renderResults();
+          return false;
+        }
+        return true;
+      }
+
+      function runAllTests() {
+        setButtonsDisabled(true);
+        resetResults("all");
+
+        try {
+          if (!ensureMathEngineReady()) {
+            return;
+          }
+
+          testUtilities();
+          testTaskGeneration();
+          testInvariants();
+          testDistractors();
+        } catch (error) {
+          assert(false, "Неперехваченное исключение в runAllTests: " + error.message);
+        } finally {
+          renderResults();
+          setButtonsDisabled(false);
+        }
+      }
+
+      function runStressTest() {
+        setButtonsDisabled(true);
+        resetResults("stress");
+
+        try {
+          if (!ensureMathEngineReady()) {
+            return;
+          }
+
+          runStressLoop();
+        } catch (error) {
+          assert(false, "Неперехваченное исключение в runStressTest: " + error.message);
+        } finally {
+          renderResults();
+          setButtonsDisabled(false);
+        }
+      }
+
+      global.runAllTests = runAllTests;
+      global.runStressTest = runStressTest;
+    })(window);
+  </script>
+</body>
+</html>

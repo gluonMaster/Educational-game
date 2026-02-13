@@ -1,0 +1,118 @@
+﻿<!--
+  Fraction Conquest — Игровой тренажёр дробей
+  Для школьников 5-7 классов (11-13 лет)
+
+  Запуск: открыть index.html в браузере
+  Настройки: открыть admin.html
+  Тесты: открыть test.html
+
+  Технологии: HTML + CSS + JavaScript (без зависимостей)
+-->
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Покорение дробей</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/map.css">
+</head>
+<body>
+  <main class="app-shell">
+    <div class="language-switch language-switch-global" aria-label="Выбор языка">
+      <button id="btn-lang-ru" class="btn btn-secondary lang-btn active" type="button" aria-pressed="true">RU</button>
+      <button id="btn-lang-de" class="btn btn-secondary lang-btn" type="button" aria-pressed="false">DE</button>
+    </div>
+
+    <section id="screen-start" class="screen active">
+      <h1 id="game-title" data-i18n="title">Покорение дробей</h1>
+
+      <div class="panel">
+        <h2 class="panel-title" data-i18n="rules_title">Правила</h2>
+        <p data-i18n="rules_text">Решай примеры с дробями и завоёвывай территории! Правильный ответ — захват области, неправильный — потеря.</p>
+      </div>
+
+      <div class="panel settings-preview">
+        <p><strong data-i18n="level_label">Уровень сложности</strong>: <span id="start-difficulty">—</span></p>
+        <p><strong data-i18n="topics_label">Темы</strong>: <span id="start-topics">—</span></p>
+      </div>
+
+      <button id="btn-start-game" class="btn btn-primary" type="button" data-i18n="start_game">Начать игру</button>
+    </section>
+
+    <section id="screen-game" class="screen hidden">
+      <div id="map-container">
+        <svg id="game-map" viewBox="0 0 1000 500" role="img" aria-label="Игровая карта"></svg>
+        <div id="score-bar">
+          <span id="score-display">
+            <span data-i18n="your_territories">Твои территории</span>:
+            <strong id="player-territories">0</strong>
+            /
+            <span data-i18n="total">Всего</span>:
+            <strong id="total-territories">0</strong>
+          </span>
+        </div>
+      </div>
+
+      <div id="task-container">
+        <div id="task-question" aria-live="polite">Здесь появится условие задачи</div>
+
+        <div id="answers-grid" aria-label="Варианты ответов">
+          <button class="answer-btn" type="button" data-answer-index="0">Вариант 1</button>
+          <button class="answer-btn" type="button" data-answer-index="1">Вариант 2</button>
+          <button class="answer-btn" type="button" data-answer-index="2">Вариант 3</button>
+          <button class="answer-btn" type="button" data-answer-index="3">Вариант 4</button>
+          <button class="answer-btn" type="button" data-answer-index="4">Вариант 5</button>
+          <button class="answer-btn" type="button" data-answer-index="5">Вариант 6</button>
+        </div>
+
+        <div id="timer-wrapper">
+          <div id="timer-bar" aria-hidden="true">
+            <div id="timer-bar-fill" class="timer-green"></div>
+          </div>
+          <div id="timer-text">0</div>
+        </div>
+
+        <div class="task-meta">
+          <span id="task-number"><span data-i18n="task_number">Задача</span>: <span id="task-number-value">1</span></span>
+          <span id="streak"><span data-i18n="streak">Серия</span>: <span id="streak-value">0</span></span>
+        </div>
+
+        <div id="feedback" class="hidden" role="status" aria-live="polite">
+          <p id="feedback-message">Сообщение о результате</p>
+          <p><strong data-i18n="explanation_label">Пояснение:</strong> <span id="feedback-explanation">Пояснение решения</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section id="screen-result" class="screen hidden">
+      <canvas id="confetti-canvas" aria-hidden="true"></canvas>
+      <h2 id="result-title" data-i18n="victory_title">Поздравляем! Материк покорён!</h2>
+      <p id="result-subtitle" class="result-subtitle"></p>
+
+      <div class="panel" id="stats-panel">
+        <p><span data-i18n="stats_solved">Решено задач</span>: <strong id="stat-solved">0</strong></p>
+        <p><span data-i18n="stats_correct">Правильных</span>: <strong id="stat-correct">0</strong></p>
+        <p><span data-i18n="stats_incorrect">Неправильных</span>: <strong id="stat-incorrect">0</strong></p>
+        <p><span data-i18n="stats_percent">Процент правильных</span>: <strong id="stat-percent">0%</strong></p>
+        <p><span data-i18n="stats_avg_time">Среднее время</span>: <strong id="stat-avg-time">0.0 сек</strong></p>
+      </div>
+
+      <div class="result-actions">
+        <button id="btn-new-game" class="btn btn-primary" type="button" data-i18n="new_game">Новая игра</button>
+        <button id="btn-back-home" class="btn btn-secondary" type="button" data-i18n="to_main">На главную</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="js/settings.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/math-engine.js"></script>
+  <script src="js/map-generator.js"></script>
+  <script src="js/map-renderer.js"></script>
+  <script src="js/timer.js"></script>
+  <script src="js/ui-controller.js"></script>
+  <script src="js/game-logic.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
